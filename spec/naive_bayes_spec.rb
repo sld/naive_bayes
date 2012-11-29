@@ -27,6 +27,11 @@ describe "NaiveBayes" do
 	end
 
 
+	it "should classify to return maximum class probablity :c" do
+		@nb.classify( @test_data[0] )[:class].should == :c
+	end
+
+
 	it "should correctly calculate probablity of class" do
 	  @nb.class_prob(:c).should == 3.0/4
 	  @nb.class_prob(:j).should == 1.0/4	  

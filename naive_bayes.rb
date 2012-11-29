@@ -1,24 +1,38 @@
 require 'set'
 
+
 class NaiveBayes
 
 
 	# By default each part of string divided by space(" ") is feature
 	def initialize
-		@klasses_count = {}
-		@word_classes_count = {}		
+		# Class' documents count 
+		# Example { :japanese => 3 } means that 3 documents with class :japanese
+		@klass_docs_count = {}     
+		# Class' words count	
+		# Example: { :japanese => {"Tokyo" => times} } means that in class :japanese, word "Tokyo" was 3 times
+		@klass_words_count = {}
 		@vocabolary = Set.new
 	end
 
 
 	def train( string, klass )
 		tokens = get_features( string )
-		@word_classes_count[klass] ||= {}			
+		@klass_words_count[klass] ||= {}			
 		tokens.each do |token|		
 			@vocabolary << token
-		  @word_classes_count[klass][token] = @word_classes_count[klass][token].to_i + 1 
+		  @klass_words_count[klass][token] = @klass_words_count[klass][token].to_i + 1 
 		end
-		@klasses_count[klass] = @klasses_count[klass].to_i + 1		
+		@klass_docs_count[klass] = @klass_docs_count[klass].to_i + 1		
+	end
+
+
+	def classify( string )
+		klasses = @klass_docs_count.keys
+		klass_probs = {}
+		klasses.each{ |klass| klass_probs[klass] = document_class_prob( string, klass ) }
+		max_klass_prob = klass_probs.max_by{ |key, value| value }
+		{:class => max_klass_prob[0], :value => max_klass_prob[1]}
 	end
 
 
@@ -30,13 +44,13 @@ class NaiveBayes
 
 
 	def cond_prob( token, klass )		
-		all_words_in_klass = @word_classes_count[klass].values.inject{ |e,s| s += e }
-		( @word_classes_count[klass][token].to_i + 1.0 ) / ( all_words_in_klass + @vocabolary.count )
+		all_words_in_klass = @klass_words_count[klass].values.inject{ |e,s| s += e }
+		( @klass_words_count[klass][token].to_i + 1.0 ) / ( all_words_in_klass + @vocabolary.count )
 	end
 
 
 	def class_prob( klass )
-		@klasses_count[klass].to_f / @klasses_count.values.inject{ |e,s| s += e }
+		@klass_docs_count[klass].to_f / @klass_docs_count.values.inject{ |e,s| s += e }
 	end
 
 
