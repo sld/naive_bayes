@@ -2,10 +2,10 @@ require 'rspec'
 require_relative "../naive_bayes.rb"
 
 
-describe NaiveBayes do 
+describe "NaiveBayes" do 
 	before(:each) do
 		@training_data = ["Chinese Beijing Chinese",
-											"Chinese Beijing Shanghai",
+											"Chinese Chinese Shanghai",
 											"Chinese Macao",
 											"Tokyo Japan Chinese"]
 
@@ -14,8 +14,8 @@ describe NaiveBayes do
 
 		# Classifier sets each word as feature by default
 		@nb = NaiveBayes.new
-		@training_data[0...3].each{ |data| @nb.train( data, :c )
-		@nb.train( @training_data[4], :j )		
+		@training_data[0...3].each{ |data| @nb.train( data, :c ) }
+		@nb.train( @training_data[3], :j )		
 	end
 
 
@@ -34,8 +34,10 @@ describe NaiveBayes do
 
 
 	it "should return ~=correctly probabilites for test_data" do
-	  @nb.document_class_prob( @test_data[0], :c ).should == 0.0003
-	  @nb.document_class_prob( @test_data[0], :j ).should == 0.0001
+	  @nb.document_class_prob( @test_data[0], :c ).should > 0.0003
+	  @nb.document_class_prob( @test_data[0], :c ).should < 0.0004
+	  @nb.document_class_prob( @test_data[0], :j ).should > 0.0001
+	  @nb.document_class_prob( @test_data[0], :j ).should < 0.0002
 	end
 
 
