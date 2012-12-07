@@ -1,9 +1,7 @@
-require 'rspec'
-require_relative "../naive_bayes.rb"
-
+require 'naive_bayes'
 
 describe "NaiveBayes" do 
-  
+
   before(:each) do
     @training_data = ["Chinese Beijing Chinese",
                                         "Chinese Chinese Shanghai",
@@ -14,7 +12,7 @@ describe "NaiveBayes" do
 
 
     # Classifier sets each word as feature by default
-    @nb = NaiveBayes.new
+    @nb = NaiveBayes::NaiveBayes.new
     @training_data[0...3].each{ |data| @nb.train( data, :c ) }
     @nb.train( @training_data[3], :j )      
   end
