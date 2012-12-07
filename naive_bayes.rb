@@ -10,7 +10,7 @@ class NaiveBayes
     # Example { :japanese => 3 } means that 3 documents with class :japanese
     @klass_docs_count = {}     
     # Class' words count  
-    # Example: { :japanese => {"Tokyo" => times} } means that in class :japanese, word "Tokyo" was 3 times
+    # Example: { :japanese => {"Tokyo" => 3} } means that in class :japanese, word "Tokyo" was 3 times
     @klass_words_count = {}
     @vocabolary = Set.new
   end
