@@ -17,7 +17,7 @@ module NaiveBayes
 	  end
 
 
-	  def train( string, klass )
+	  def train( string, klass )	  
 	    tokens = get_features( string )
 	    @klass_words_count[klass] ||= {}      
 	    tokens.each do |token|    
@@ -32,8 +32,7 @@ module NaiveBayes
 	    klasses = @klass_docs_count.keys
 	    klass_probs = {}
 	    klasses.each{ |klass| klass_probs[klass] = document_class_prob( string, klass ) }
-	    max_klass_prob = klass_probs.max_by{ |key, value| value }
-	    {:class => max_klass_prob[0], :value => max_klass_prob[1]}
+	    get_necessary_klass( klass_probs )	   
 	  end
 
 
@@ -53,7 +52,7 @@ module NaiveBayes
 
 
 	  def cond_prob( token, klass )   
-	    all_words_in_klass = @klass_words_count[klass].values.inject{ |e,s| s += e }
+	    all_words_in_klass = @klass_words_count[klass].values.inject{ |e,s| s += e }.to_i
 	    ( @klass_words_count[klass][token].to_i + 1.0 ) / ( all_words_in_klass + @vocabolary.count )
 	  end
 
@@ -63,11 +62,32 @@ module NaiveBayes
 	  end
 
 
-	  protected 
+	  def export
+	  	{ :docs_count => @klass_docs_count,
+	  		:words_count => @klass_words_count,
+	  		:vocabolary => @vocabolary }
+    end
+
+
+    def import!( klass_docs_count, klass_words_count, vocabolary )
+      @klass_docs_count = klass_docs_count
+      @klass_words_count = klass_words_count
+      @vocabolary = vocabolary
+    end
+
+
+    protected
 
 
 	  def get_features( string )
 	    string.split(" ")
+	  end
+
+
+	  def get_necessary_klass( klass_probs )
+      klass_probs = Hash[klass_probs.sort_by{|k,v| v}.reverse]
+	  	max_klass_prob = klass_probs.first
+	    {:class => max_klass_prob[0], :value => max_klass_prob[1], :all_values => klass_probs.values}
 	  end
 
 	end

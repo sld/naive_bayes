@@ -8,8 +8,8 @@ Gem::Specification.new do |gem|
   gem.version       = NaiveBayes::VERSION
   gem.authors       = ["Idris"]
   gem.email         = ["sld7700@gmail.com"]
-  gem.description   = %q{TODO: Write a gem description}
-  gem.summary       = %q{TODO: Write a gem summary}
+  gem.description   = %q{Naive Bayes implementation}
+  gem.summary       = %q{Simple Naive Bayes implementation}
   gem.homepage      = ""
 
   gem.files         = `git ls-files`.split($/)
