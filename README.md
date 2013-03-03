@@ -32,6 +32,7 @@ Or install it yourself as:
     classified[:class] # Should return maximum likelihood class
 
 You can redefine get_features method to get specific features from text.
+
 Also you can pass to train or classify features vector instead of string:
 
     @training_data = [["Chinese", "Beijing", "Chinese"],                                        
