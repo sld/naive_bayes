@@ -33,8 +33,7 @@ Or install it yourself as:
 
 You can redefine get_features method to get specific features from text.
 
-Also you can pass to train or classify features vector instead of string:
-
+Also you can pass features vector instead of string into train or classify:
     @training_data = [["Chinese", "Beijing", "Chinese"],                                        
                       ["Chinese", "Macao"],
                       ["Tokyo", "Japan", "Chinese"]]  
