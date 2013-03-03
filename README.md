@@ -1,6 +1,6 @@
 # NaiveBayes
 
-TODO: Write a gem description
+Multinomial Naive Bayes.
 
 ## Installation
 
@@ -18,7 +18,31 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+    @training_data = ["Chinese Beijing Chinese",
+                                        "Chinese Chinese Shanghai",
+                                        "Chinese Macao",
+                                        "Tokyo Japan Chinese"]
+    @test_str = "Chinese Chinese Chinese Tokyo Japan"
+
+    # Classifier sets each word as feature by default( string.split(" ") )
+    @nb = NaiveBayes::NaiveBayes.new
+    @training_data[0...3].each{ |data| @nb.train( data, :c ) }
+    @nb.train( @training_data[3], :j ) 
+    classified = @nb.classify( @test_str ) #=> {:class => xx, :value => xx, :all_values => xx}
+    classified[:class] # Should return maximum likelihood class
+
+You can redefine get_features method to get specific features from text.
+Also you can pass to train or classify features vector instead of string:
+
+    @training_data = [["Chinese", "Beijing", "Chinese"],                                        
+                      ["Chinese", "Macao"],
+                      ["Tokyo", "Japan", "Chinese"]]  
+    @test_vector = ["Chinese", "Chinese", "Chinese", "Tokyo", "Japan"]
+    @nb = NaiveBayes::NaiveBayes.new
+    @training_data[0...2].each{ |data| @nb.train( data, :c ) } 
+    @nb.train( @training_data[2], :j ) 
+    @nb.classify( @test_vector )[:class] 
+
 
 ## Contributing
 

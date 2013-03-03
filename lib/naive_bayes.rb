@@ -17,8 +17,8 @@ module NaiveBayes
 	  end
 
 
-	  def train( string, klass )	  
-	    tokens = get_features( string )
+	  def train( string, klass )	
+	  	tokens = form_features_vector( string )	  	
 	    @klass_words_count[klass] ||= {}      
 	    tokens.each do |token|    
 	      @vocabolary << token
@@ -31,22 +31,21 @@ module NaiveBayes
 	  def classify( string )
 	    klasses = @klass_docs_count.keys
 	    klass_probs = {}
-	    klasses.each{ |klass| klass_probs[klass] = document_class_prob( string, klass ) }
+	    features_vector = form_features_vector( string )	
+	    klasses.each{ |klass| klass_probs[klass] = document_class_prob( features_vector, klass ) }
 	    get_necessary_klass( klass_probs )	   
 	  end
 
 
-	  def document_class_prob( string, klass )
-	    tokens = get_features( string )
-	    product_of_cond_probs = tokens.inject(1){ |product, e| product *= cond_prob( e, klass ) }
+	  def document_class_prob( features_vector, klass )
+	    product_of_cond_probs = features_vector.inject(1){ |product, e| product *= cond_prob( e, klass ) }
 	    class_prob( klass ) * product_of_cond_probs
 	  end
 
 
 	  # Logarithmic version to avoid Arithmetic_underflow
-	  def log_document_class_prob( string, klass )
-	    tokens = get_features( string )
-	    log_sum_of_cond_probs = tokens.inject(0){ |sum, e| sum += Math::log( cond_prob( e, klass ) ) } 
+	  def log_document_class_prob( features_vector, klass )
+	    log_sum_of_cond_probs = features_vector.inject(0){ |sum, e| sum += Math::log( cond_prob( e, klass ) ) } 
 	    log_val = Math::log( class_prob( klass ) ) + log_sum_of_cond_probs    
 	  end
 
@@ -73,6 +72,16 @@ module NaiveBayes
       @klass_docs_count = klass_docs_count
       @klass_words_count = klass_words_count
       @vocabolary = vocabolary
+    end
+
+
+    def form_features_vector string 
+    	case string
+	  		when Array
+	  			return string
+	  		when String 
+					return get_features( string )
+			end    	
     end
 
 

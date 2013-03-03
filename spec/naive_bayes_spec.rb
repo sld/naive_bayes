@@ -38,10 +38,11 @@ describe "NaiveBayes" do
 
 
   it "should return ~=correctly probabilites for test_data" do
-    @nb.document_class_prob( @test_data[0], :c ).should > 0.0003
-    @nb.document_class_prob( @test_data[0], :c ).should < 0.0004
-    @nb.document_class_prob( @test_data[0], :j ).should > 0.0001
-    @nb.document_class_prob( @test_data[0], :j ).should < 0.0002
+    features_vector = @nb.form_features_vector(@test_data[0])
+    @nb.document_class_prob( features_vector, :c ).should > 0.0003
+    @nb.document_class_prob( features_vector, :c ).should < 0.0004
+    @nb.document_class_prob( features_vector, :j ).should > 0.0001
+    @nb.document_class_prob( features_vector, :j ).should < 0.0002
   end
 
 
