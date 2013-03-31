@@ -31,9 +31,10 @@ Or install it yourself as:
     classified = @nb.classify( @test_str ) #=> {:class => xx, :value => xx, :all_values => xx}
     classified[:class] # Should return maximum likelihood class
 
-You can redefine get_features method to get specific features from text.
+You can redefine *get_features* method to get specific features from text.
 
 Also you can pass features vector instead of string into train or classify:
+
     @training_data = [["Chinese", "Beijing", "Chinese"],                                        
                       ["Chinese", "Macao"],
                       ["Tokyo", "Japan", "Chinese"]]  
