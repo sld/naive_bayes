@@ -1,6 +1,7 @@
 # NaiveBayes
 
 Multinomial Naive Bayes.
+Also includes ROSE smoothing which turned off by default.
 
 ## Installation
 
@@ -44,6 +45,11 @@ Also you can pass features vector instead of string into train or classify:
     @nb.train( @training_data[2], :j ) 
     @nb.classify( @test_vector )[:class] 
 
+To use ROSE smoothing which described in "Smoothing Multinomial Naïve Bayes in the Presence of Imbalance"  Alexander Y. Liu, Cheryl E. Martin:
+    
+    NaiveBayes::NaiveBayes.new 1.0, :rose, {:rose => {:duplicate_count => 2, :duplicate_klass => :j} }
+
+But ROSE smoothing didn't tested good yet.
 
 ## Contributing
 
