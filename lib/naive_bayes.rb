@@ -5,8 +5,13 @@ module NaiveBayes
 
 
 	class NaiveBayes
+		ROSE = :rose
+		MULTINOMIAL = :multinomial
+
 	  # By default each part of string divided by space(" ") is feature
-	  def initialize
+	  # Type can be: +:multinomial+ OR +:rose+	 
+	  # If type is rose then you need to specify [:rose][:duplicate_count] and [:rose][:duplicate_klass] from options 
+	  def initialize laplace_smoothing = 1.0, type = :multinomial, options = {}
 	    # Class' documents count 
 	    # Example { :japanese => 3 } means that 3 documents with class :japanese
 	    @klass_docs_count = {}     
@@ -14,6 +19,16 @@ module NaiveBayes
 	    # Example: { :japanese => {"Tokyo" => 3} } means that in class :japanese, word "Tokyo" was 3 times
 	    @klass_words_count = {}
 	    @vocabolary = Set.new
+	    @laplace_smoothing = laplace_smoothing
+
+	    @type = type
+	    if @type == ROSE 
+	    	raise ArgumentError if !options[:rose][:duplicate_klass] || !options[:rose][:duplicate_count]
+	    	@average_document_words = {}
+	    	@rose_duplicate_count = {}
+	    	@m_rose = {}
+	    	@rose_duplicate_count[options[:rose][:duplicate_klass]] = options[:rose][:duplicate_count]
+	    end
 	  end
 
 
@@ -25,6 +40,11 @@ module NaiveBayes
 	      @klass_words_count[klass][token] = @klass_words_count[klass][token].to_i + 1 
 	    end
 	    @klass_docs_count[klass] = @klass_docs_count[klass].to_i + 1    
+
+	    if @type == ROSE
+	    	@average_document_words[klass] ||= []
+	    	@average_document_words[klass] << tokens.count	
+	    end
 	  end
 
 
@@ -32,7 +52,14 @@ module NaiveBayes
 	    klasses = @klass_docs_count.keys
 	    klass_probs = {}
 	    features_vector = form_features_vector( string )	
-	    klasses.each{ |klass| klass_probs[klass] = document_class_prob( features_vector, klass ) }
+	    klasses.each do |klass| 
+	    	case @type 
+	    	when MULTINOMIAL 
+	    		klass_probs[klass] = document_class_prob( features_vector, klass ) 
+	    	when ROSE
+	    		klass_probs[klass] = rose_document_class_prob( features_vector, klass ) 
+	    	end
+	    end
 	    get_necessary_klass( klass_probs )	   
 	  end
 
@@ -44,15 +71,58 @@ module NaiveBayes
 
 
 	  # Logarithmic version to avoid Arithmetic_underflow
+	  #NOTE: not used currently
 	  def log_document_class_prob( features_vector, klass )
 	    log_sum_of_cond_probs = features_vector.inject(0){ |sum, e| sum += Math::log( cond_prob( e, klass ) ) } 
 	    log_val = Math::log( class_prob( klass ) ) + log_sum_of_cond_probs    
 	  end
 
 
+	  #---------------------------- ROSE --------------------------------------------
+	  # Implementation NB using ROSE smoothing. Described in paper "Smoothing Multinomial Naïve Bayes in the Presence of Imbalance"
+	  def rose_document_class_prob( features_vector, klass )
+	  	product_of_cond_probs = features_vector.inject(1){ |product, e| product *= rose_cond_prob( e, klass ) }
+	  	class_prob( klass ) * product_of_cond_probs
+	  end
+
+
+	  def rose_cond_prob token, klass 
+	  	all_words_in_klass = @klass_words_count[klass].values.inject{ |e,s| s = s + e }.to_i	  	
+	  	sum_of_m_rose = 0.0
+	  	@klass_words_count[klass].keys.each{ |tkn| sum_of_m_rose += m_rose(tkn, klass) }
+	    ( @klass_words_count[klass][token].to_i + @laplace_smoothing + m_rose(token, klass) ) / ( all_words_in_klass + @laplace_smoothing * @vocabolary.count + sum_of_m_rose )
+	  end
+
+
+	  def m_rose(token, klass)
+	  	@m_rose[klass] ||= {}
+	  	if @m_rose[klass][token]	  		
+	  		return @m_rose[klass][token]
+	  	else
+		  	all_words_in_klass = @klass_words_count[klass].values.inject{ |e,s| s = s + e }.to_f		  	
+		  	@m_rose[klass][token] = (rose_duplicate_count(klass) * average_document_words( klass ) * @klass_words_count[klass][token].to_f) / all_words_in_klass		  	
+		  	return @m_rose[klass][token]
+		  end
+	  end
+
+
+	  def average_document_words( klass )	  	
+	  	mean = @average_document_words[klass].reduce(:+) / @average_document_words[klass].count.to_f
+	  	mean.round
+	  end
+
+
+	  def rose_duplicate_count( klass )	 
+	  	@rose_duplicate_count[klass].to_i                                              
+	  end
+
+
+	  #-----END----------------------- ROSE ------------------------------------END--------
+
+
 	  def cond_prob( token, klass )   
-	    all_words_in_klass = @klass_words_count[klass].values.inject{ |e,s| s += e }.to_i
-	    ( @klass_words_count[klass][token].to_i + 1.0 ) / ( all_words_in_klass + @vocabolary.count )
+	    all_words_in_klass = @klass_words_count[klass].values.inject{ |e,s| s = s + e }.to_i
+	    ( @klass_words_count[klass][token].to_i + @laplace_smoothing ) / ( all_words_in_klass + @laplace_smoothing * @vocabolary.count )
 	  end
 
 
