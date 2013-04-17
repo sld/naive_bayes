@@ -147,9 +147,9 @@ module NaiveBayes
       @vocabulary = vocabulary
       @laplace_smoothing = options[:laplace_smoothing] if options[:laplace_smoothing]
 
-      if @type == ROSE && options[:rose_duplicate_count] && options[:average_document_words]
-        @rose_duplicate_count = options[:rose_duplicate_count]
-        @average_document_words = options[:average_document_words]
+      if @type == ROSE
+        @rose_duplicate_count = options[:rose_duplicate_count] if options[:rose_duplicate_count]
+        @average_document_words = options[:average_document_words] if options[:average_document_words]
       end
     end
 
