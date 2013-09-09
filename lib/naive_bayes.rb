@@ -154,12 +154,12 @@ module NaiveBayes
     end
 
 
-    def form_features_vector string 
-      case string
+    def form_features_vector obj 
+      case obj
         when Array
-          return string
+          return obj
         when String 
-          return get_features( string )
+          return get_features( obj )
       end     
     end
 
