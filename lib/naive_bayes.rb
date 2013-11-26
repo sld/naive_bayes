@@ -1,4 +1,5 @@
 require "naive_bayes/version"
+# require "naive_bayes/classifier_performance"
 require 'set'
 
 module NaiveBayes
@@ -35,7 +36,7 @@ module NaiveBayes
 
 
     def train( string, klass )  
-      tokens = form_features_vector( string )     
+      tokens = form_features_vector( string )           
       @klass_words_count[klass] ||= {}      
       tokens.each do |token|    
         @vocabulary << token
@@ -51,9 +52,12 @@ module NaiveBayes
 
 
     def classify( string )
+      raise 'Run "precache!" function before classifing!' unless @precached
+
       klasses = @klass_docs_count.keys
       klass_probs = {}
       features_vector = form_features_vector( string )  
+      
       klasses.each do |klass| 
         case @type 
         when MULTINOMIAL 
@@ -62,12 +66,14 @@ module NaiveBayes
           klass_probs[klass] = rose_document_class_prob( features_vector, klass ) 
         end
       end
+
       get_necessary_klass( klass_probs )     
     end
 
 
     def document_class_prob( features_vector, klass )
-      product_of_cond_probs = features_vector.inject(1){ |product, e| product *= cond_prob( e, klass ) }
+      product_of_cond_probs = 1
+      features_vector.each{ |e| product_of_cond_probs *= cond_prob( e, klass ) }
       class_prob( klass ) * product_of_cond_probs
     end
 
@@ -75,7 +81,8 @@ module NaiveBayes
     # Logarithmic version to avoid Arithmetic_underflow
     #NOTE: not used currently
     def log_document_class_prob( features_vector, klass )
-      log_sum_of_cond_probs = features_vector.inject(0){ |sum, e| sum += Math::log( cond_prob( e, klass ) ) } 
+      log_sum_of_cond_probs = 0
+      features_vector.each{ |e| log_sum_of_cond_probs += Math::log( cond_prob( e, klass ) ) } 
       log_val = Math::log( class_prob( klass ) ) + log_sum_of_cond_probs    
     end
 
@@ -89,9 +96,8 @@ module NaiveBayes
 
 
     def rose_cond_prob token, klass 
-      all_words_in_klass = @klass_words_count[klass].values.inject{ |e,s| s = s + e }.to_i      
-      sum_of_m_rose = 0.0
-      @klass_words_count[klass].keys.each{ |tkn| sum_of_m_rose += m_rose(tkn, klass) }
+      all_words_in_klass = @all_words_in_klass_cached[klass]     
+      sum_of_m_rose = @sum_of_m_rose_cached[klass]
       ( @klass_words_count[klass][token].to_i + @laplace_smoothing + m_rose(token, klass) ) / ( all_words_in_klass + @laplace_smoothing * @vocabulary.count + sum_of_m_rose )
     end
 
@@ -101,7 +107,7 @@ module NaiveBayes
       if @m_rose[klass][token]        
         return @m_rose[klass][token]
       else
-        all_words_in_klass = @klass_words_count[klass].values.inject{ |e,s| s = s + e }.to_f        
+        all_words_in_klass = @all_words_in_klass_cached[klass]
         @m_rose[klass][token] = (rose_duplicate_count(klass) * average_document_words( klass ) * @klass_words_count[klass][token].to_f) / all_words_in_klass        
         return @m_rose[klass][token]
       end
@@ -109,8 +115,14 @@ module NaiveBayes
 
 
     def average_document_words( klass )     
-      mean = @average_document_words[klass].reduce(:+) / @average_document_words[klass].count.to_f
-      mean.round
+      @mean ||= {}
+      if @mean[klass]
+        return @mean[klass]
+      else
+        mean = @average_document_words[klass].reduce(:+) / @average_document_words[klass].count.to_f
+        @mean[klass] = mean.round
+        return @mean[klass]
+      end
     end
 
 
@@ -121,13 +133,18 @@ module NaiveBayes
 
 
     def cond_prob( token, klass )   
-      all_words_in_klass = @klass_words_count[klass].values.inject{ |e,s| s = s + e }.to_i
-      ( @klass_words_count[klass][token].to_i + @laplace_smoothing ) / ( all_words_in_klass + @laplace_smoothing * @vocabulary.count )
+      @cond_prob_cached ||= {}
+      @cond_prob_cached[klass] ||= {}
+      return @cond_prob_cached[klass][token] if @cond_prob_cached[klass][token]
+      all_words_in_klass = @all_words_in_klass_cached[klass]
+      @cond_prob_cached[klass][token] = ( @klass_words_count[klass][token].to_i + @laplace_smoothing ) / ( all_words_in_klass + @laplace_smoothing * @vocabulary.count )
     end
 
 
     def class_prob( klass )
-      @klass_docs_count[klass].to_f / @klass_docs_count.values.inject{ |e,s| s += e }
+      @cached_klass_prob ||= {}
+      return @cached_klass_prob[klass] if @cached_klass_prob[klass]
+      @cached_klass_prob[klass] = @klass_docs_count[klass].to_f / @klass_docs_count.values.inject{ |e,s| s += e }
     end
 
 
@@ -146,6 +163,7 @@ module NaiveBayes
       @klass_words_count = klass_words_count
       @vocabulary = vocabulary
       @laplace_smoothing = options[:laplace_smoothing] if options[:laplace_smoothing]
+      precache_all_words_in_class
 
       if @type == ROSE
         @rose_duplicate_count = options[:rose_duplicate_count] if options[:rose_duplicate_count]
@@ -164,6 +182,13 @@ module NaiveBayes
     end
 
 
+    def precache!
+      @precached = true
+      precache_all_words_in_class
+      precache_sum_of_m_rose if @type == ROSE
+    end
+
+
     protected
 
 
@@ -176,6 +201,24 @@ module NaiveBayes
       klass_probs = Hash[klass_probs.sort_by{|k,v| v}.reverse]
       max_klass_prob = klass_probs.first
       {:class => max_klass_prob[0], :value => max_klass_prob[1], :all_values => klass_probs.values}
+    end
+
+
+    def precache_all_words_in_class
+      @all_words_in_klass_cached = {}
+      @klass_docs_count.keys.each do |klass|
+        @all_words_in_klass_cached[klass] = @klass_words_count[klass].values.inject{ |e,s| s = s + e }.to_f         
+      end
+    end
+
+
+    def precache_sum_of_m_rose
+      @sum_of_m_rose_cached = {}
+      @klass_docs_count.keys.each do |klass|
+        sum_of_m_rose = 0.0
+        @klass_words_count[klass].keys.each{ |tkn| sum_of_m_rose += m_rose(tkn, klass) }
+        @sum_of_m_rose_cached[klass] = sum_of_m_rose
+      end
     end
 
   end

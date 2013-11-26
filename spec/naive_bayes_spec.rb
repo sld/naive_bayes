@@ -14,7 +14,8 @@ describe "NaiveBayes" do
       # Classifier sets each word as feature by default
       @nb = NaiveBayes::NaiveBayes.new
       @training_data[0...3].each{ |data| @nb.train( data, :c ) }
-      @nb.train( @training_data[3], :j )      
+      @nb.train( @training_data[3], :j )
+      @nb.precache!      
     end
 
 
@@ -59,7 +60,8 @@ describe "NaiveBayes" do
       @nb = NaiveBayes::NaiveBayes.new 1.0, :rose, {:rose => {:duplicate_count => 2, :duplicate_klass => :j} }
 
       @training_data[0...3].each{ |data| @nb.train( data, :c ) }
-      @nb.train( @training_data[3], :j )      
+      @nb.train( @training_data[3], :j ) 
+      @nb.precache!     
     end
 
     it "should classify to return maximum class probablity :c.  But maybe it should be like that." do
