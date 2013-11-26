@@ -1,7 +1,8 @@
 # NaiveBayes
 
 Multinomial Naive Bayes.
-Also includes ROSE smoothing which turned off by default.
+
+Also includes ROSE smoothing which described in "Smoothing Multinomial Naïve Bayes in the Presence of Imbalance"  Alexander Y. Liu, Cheryl E. Martin.
 
 ## Installation
 
